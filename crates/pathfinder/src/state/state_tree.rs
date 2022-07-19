@@ -5,6 +5,8 @@
 
 use rusqlite::Transaction;
 
+use stark_hash::StarkHash;
+
 use crate::{
     core::{
         ContractAddress, ContractRoot, ContractStateHash, GlobalRoot, StorageAddress, StorageValue,
@@ -27,7 +29,7 @@ impl<'a> ContractsStateTree<'a> {
         Ok(Self { tree })
     }
 
-    pub fn get(&self, address: StorageAddress) -> anyhow::Result<StorageValue> {
+    pub fn get(&mut self, address: StorageAddress) -> anyhow::Result<StorageValue> {
         let value = self.tree.get(address.0.view_bits())?;
         Ok(StorageValue(value))
     }
@@ -45,9 +47,9 @@ impl<'a> ContractsStateTree<'a> {
     /// Traverse this tree using an iterative Depth First Search.
     pub(crate) fn dfs<VisitorFn>(&self, visitor_fn: &mut VisitorFn)
     where
-        VisitorFn: FnMut(&Node),
+        VisitorFn: FnMut(&Node, StarkHash),
     {
-        self.dfs(visitor_fn)
+        self.tree.dfs(visitor_fn)
     }
 }
 
@@ -65,7 +67,7 @@ impl<'a> GlobalStateTree<'a> {
         Ok(Self { tree })
     }
 
-    pub fn get(&self, address: ContractAddress) -> anyhow::Result<ContractStateHash> {
+    pub fn get(&mut self, address: ContractAddress) -> anyhow::Result<ContractStateHash> {
         let value = self.tree.get(address.0.view_bits())?;
         Ok(ContractStateHash(value))
     }
@@ -87,8 +89,8 @@ impl<'a> GlobalStateTree<'a> {
     /// Traverse this tree using an iterative Depth First Search.
     pub(crate) fn dfs<VisitorFn>(&self, visitor_fn: &mut VisitorFn)
     where
-        VisitorFn: FnMut(&Node),
+        VisitorFn: FnMut(&Node, StarkHash),
     {
-        self.dfs(visitor_fn)
+        self.tree.dfs(visitor_fn)
     }
 }

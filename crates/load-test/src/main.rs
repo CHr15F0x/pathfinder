@@ -252,8 +252,33 @@ async fn task_get_storage_at(user: &mut GooseUser) -> TransactionResult {
     //
     // "0x4657d051d2c6ad2360ab3100df06bfd8e5cc3180ad1c516c501d7dfa589ae6":
     // [{"key": "0x37501df619c4fc4e96f6c0243f55e3abe7d1aca7db9af8f3740ba3696b3fdac", "value": "0x5"}]
+
+    // https://alpha-mainnet.starknet.io/feeder_gateway/get_state_update?blockNumber=2790
+    //
+    // "block_hash": "0x76c3dbc42ad35489c4983f0636aaa3d208a2c508c6b79c5b22c3b558fe68957"
+    //
+    // "0xda114221cb83fa859dbdb4c44beeaa0bb37c7537ad5ae66fe5e0efd20e6eb3":
+    // [{"key": "0x1c3491b8e712200e0b982a61b1dfdaab1cf5d0518e206f397d962fb446e788", "value": "0x8ac7230489e80000"}
     get_storage_at(
         user,
+        ContractAddress(
+            StarkHash::from_hex_str(
+                "0xda114221cb83fa859dbdb4c44beeaa0bb37c7537ad5ae66fe5e0efd20e6eb3",
+            )
+            .unwrap(),
+        ),
+        StorageAddress(
+            StarkHash::from_hex_str(
+                "0x1c3491b8e712200e0b982a61b1dfdaab1cf5d0518e206f397d962fb446e788",
+            )
+            .unwrap(),
+        ),
+        BlockHashOrTag::Hash(StarknetBlockHash(
+            StarkHash::from_hex_str(
+                "0x76c3dbc42ad35489c4983f0636aaa3d208a2c508c6b79c5b22c3b558fe68957",
+            )
+            .unwrap(),
+        )),
         // ContractAddress(
         //     StarkHash::from_hex_str(
         //         "0x2dd3316c4aaee215d5a20c091bb4b01d9bc5923c5beb039e6d84e3d5b28c5b9",
@@ -272,24 +297,24 @@ async fn task_get_storage_at(user: &mut GooseUser) -> TransactionResult {
         //     )
         //     .unwrap(),
         // )),
-        ContractAddress(
-            StarkHash::from_hex_str(
-                "0x4657d051d2c6ad2360ab3100df06bfd8e5cc3180ad1c516c501d7dfa589ae6",
-            )
-            .unwrap(),
-        ),
-        StorageAddress(
-            StarkHash::from_hex_str(
-                "0x37501df619c4fc4e96f6c0243f55e3abe7d1aca7db9af8f3740ba3696b3fdac",
-            )
-            .unwrap(),
-        ),
-        BlockHashOrTag::Hash(StarknetBlockHash(
-            StarkHash::from_hex_str(
-                "0x37cb14332210a0eb0088c914d6516bae855c0012f499cef87f2109566180a8e",
-            )
-            .unwrap(),
-        )),
+        // ContractAddress(
+        //     StarkHash::from_hex_str(
+        //         "0x4657d051d2c6ad2360ab3100df06bfd8e5cc3180ad1c516c501d7dfa589ae6",
+        //     )
+        //     .unwrap(),
+        // ),
+        // StorageAddress(
+        //     StarkHash::from_hex_str(
+        //         "0x37501df619c4fc4e96f6c0243f55e3abe7d1aca7db9af8f3740ba3696b3fdac",
+        //     )
+        //     .unwrap(),
+        // ),
+        // BlockHashOrTag::Hash(StarknetBlockHash(
+        //     StarkHash::from_hex_str(
+        //         "0x37cb14332210a0eb0088c914d6516bae855c0012f499cef87f2109566180a8e",
+        //     )
+        //     .unwrap(),
+        // )),
     )
     .await?;
     Ok(())

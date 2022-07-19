@@ -408,7 +408,7 @@ impl RpcApi {
                 // by using a dedicated error code from the RPC API spec
                 .ok_or_else(|| Error::from(ErrorCode::InvalidBlockHash))?;
 
-            let global_state_tree = GlobalStateTree::load(&tx, global_root)
+            let mut global_state_tree = GlobalStateTree::load(&tx, global_root)
                 .context("Global state tree")
                 .map_err(internal_server_error)?;
 
@@ -432,7 +432,7 @@ impl RpcApi {
                     ))
                 })?;
 
-            let contract_state_tree = ContractsStateTree::load(&tx, contract_state_root)
+            let mut contract_state_tree = ContractsStateTree::load(&tx, contract_state_root)
                 .context("Load contract state tree")
                 .map_err(internal_server_error)?;
 

@@ -78,6 +78,10 @@ impl<'a> crate::state::merkle_tree::NodeStorage for RcNodeStorage<'a> {
     fn increment_ref_count(&self, key: StarkHash) -> anyhow::Result<()> {
         self.increment_ref_count(key)
     }
+
+    fn transaction<'b>(&'b self) -> Option<&'b Transaction<'_>> {
+        Some(self.transaction)
+    }
 }
 
 /// A binary node which can be read / written from an [RcNodeStorage].

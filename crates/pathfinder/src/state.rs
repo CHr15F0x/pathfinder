@@ -44,7 +44,7 @@ impl std::fmt::Debug for CompressedContract {
 /// Specifically, it updates the [ContractsStateTree] and [ContractsStateTable].
 pub(crate) fn update_contract_state(
     update: &ContractUpdate,
-    global_tree: &GlobalStateTree<'_>,
+    global_tree: &mut GlobalStateTree<'_>,
     db: &Transaction<'_>,
 ) -> anyhow::Result<ContractStateHash> {
     // Update the contract state tree.

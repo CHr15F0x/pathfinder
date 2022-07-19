@@ -67,15 +67,15 @@ Hint: Make sure the provided ethereum.url and ethereum.password are good.",
     };
     let sync_state = Arc::new(state::SyncState::default());
 
-    let sync_handle = tokio::spawn(state::sync(
-        storage.clone(),
-        eth_transport.clone(),
-        ethereum_chain,
-        sequencer.clone(),
-        sync_state.clone(),
-        state::l1::sync,
-        state::l2::sync,
-    ));
+    // let sync_handle = tokio::spawn(state::sync(
+    //     storage.clone(),
+    //     eth_transport.clone(),
+    //     ethereum_chain,
+    //     sequencer.clone(),
+    //     sync_state.clone(),
+    //     state::l1::sync,
+    //     state::l2::sync,
+    // ));
 
     // TODO: the error could be recovered, but currently it's required for startup. There should
     // not be other reason for the start to fail than python script not firing up.
@@ -105,12 +105,12 @@ Hint: Make sure the provided ethereum.url and ethereum.password are good.",
 
     // Monitor our spawned process tasks.
     tokio::select! {
-        result = sync_handle => {
-            match result {
-                Ok(task_result) => tracing::error!("Sync process ended unexpected with: {:?}", task_result),
-                Err(err) => tracing::error!("Sync process ended unexpected; failed to join task handle: {:?}", err),
-            }
-        }
+        // result = sync_handle => {
+        //     match result {
+        //         Ok(task_result) => tracing::error!("Sync process ended unexpected with: {:?}", task_result),
+        //         Err(err) => tracing::error!("Sync process ended unexpected; failed to join task handle: {:?}", err),
+        //     }
+        // }
         result = cairo_handle => {
             match result {
                 Ok(task_result) => tracing::error!("Cairo process ended unexpected with: {:?}", task_result),
