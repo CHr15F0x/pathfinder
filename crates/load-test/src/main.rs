@@ -18,7 +18,7 @@ use stark_hash::StarkHash;
 use pathfinder_lib::{
     core::{
         ContractAddress, StarknetBlockHash, StarknetBlockNumber, StarknetTransactionHash,
-        StarknetTransactionIndex,
+        StarknetTransactionIndex, StorageAddress, StorageValue,
     },
     rpc::types::{
         reply::{
@@ -236,6 +236,65 @@ async fn task_get_events(user: &mut GooseUser) -> TransactionResult {
     Ok(())
 }
 
+async fn task_get_storage_at(user: &mut GooseUser) -> TransactionResult {
+    // Taken from:
+    // https://alpha-mainnet.starknet.io/feeder_gateway/get_state_update?blockNumber=2700
+    //
+    // "block_hash": "0x4f6637f4de8858f24540598bb3bf38e37cd7bf8ad2bfbfe5ef94f326c77ac67"
+    //
+    // "0x2dd3316c4aaee215d5a20c091bb4b01d9bc5923c5beb039e6d84e3d5b28c5b9":
+    // [{"key": "0xf920571b9f85bdd92a867cfdc73319d0f8836f0e69e06e4c5566b6203f75cc",
+    // "value": "0x1bd7ca87f139693e6681be2042194cf631c4e8d77027bf0ea9e6d55fc6018ac"}],
+
+    // https://alpha-mainnet.starknet.io/feeder_gateway/get_state_update?blockNumber=1000
+    //
+    // "block_hash": "0x37cb14332210a0eb0088c914d6516bae855c0012f499cef87f2109566180a8e"
+    //
+    // "0x4657d051d2c6ad2360ab3100df06bfd8e5cc3180ad1c516c501d7dfa589ae6":
+    // [{"key": "0x37501df619c4fc4e96f6c0243f55e3abe7d1aca7db9af8f3740ba3696b3fdac", "value": "0x5"}]
+    get_storage_at(
+        user,
+        // ContractAddress(
+        //     StarkHash::from_hex_str(
+        //         "0x2dd3316c4aaee215d5a20c091bb4b01d9bc5923c5beb039e6d84e3d5b28c5b9",
+        //     )
+        //     .unwrap(),
+        // ),
+        // StorageAddress(
+        //     StarkHash::from_hex_str(
+        //         "0xf920571b9f85bdd92a867cfdc73319d0f8836f0e69e06e4c5566b6203f75cc",
+        //     )
+        //     .unwrap(),
+        // ),
+        // BlockHashOrTag::Hash(StarknetBlockHash(
+        //     StarkHash::from_hex_str(
+        //         "0x4f6637f4de8858f24540598bb3bf38e37cd7bf8ad2bfbfe5ef94f326c77ac67",
+        //     )
+        //     .unwrap(),
+        // )),
+        ContractAddress(
+            StarkHash::from_hex_str(
+                "0x4657d051d2c6ad2360ab3100df06bfd8e5cc3180ad1c516c501d7dfa589ae6",
+            )
+            .unwrap(),
+        ),
+        StorageAddress(
+            StarkHash::from_hex_str(
+                "0x37501df619c4fc4e96f6c0243f55e3abe7d1aca7db9af8f3740ba3696b3fdac",
+            )
+            .unwrap(),
+        ),
+        BlockHashOrTag::Hash(StarknetBlockHash(
+            StarkHash::from_hex_str(
+                "0x37cb14332210a0eb0088c914d6516bae855c0012f499cef87f2109566180a8e",
+            )
+            .unwrap(),
+        )),
+    )
+    .await?;
+    Ok(())
+}
+
 //
 // Requests
 //
@@ -356,6 +415,20 @@ async fn get_events(user: &mut GooseUser, filter: EventFilter) -> MethodResult<G
     post_jsonrpc_request(user, "starknet_getEvents", json!({ "filter": filter })).await
 }
 
+async fn get_storage_at(
+    user: &mut GooseUser,
+    contract_address: ContractAddress,
+    key: StorageAddress,
+    block_hash: BlockHashOrTag,
+) -> MethodResult<StorageValue> {
+    post_jsonrpc_request(
+        user,
+        "starknet_getStorageAt",
+        json!({ "contract_address": contract_address, "key": key, "block_hash": block_hash }),
+    )
+    .await
+}
+
 async fn call(
     user: &mut GooseUser,
     contract_address: ContractAddress,
@@ -410,51 +483,54 @@ async fn main() -> Result<(), GooseError> {
 
     GooseAttack::initialize()?
         // primitive operations using the database
+        // .register_scenario(
+        //     scenario!("block_by_number").register_transaction(transaction!(task_block_by_number)),
+        // )
+        // .register_scenario(
+        //     scenario!("block_by_hash").register_transaction(transaction!(task_block_by_hash)),
+        // )
+        // .register_scenario(
+        //     scenario!("block_transaction_count_by_hash")
+        //         .register_transaction(transaction!(task_block_transaction_count_by_hash)),
+        // )
+        // .register_scenario(
+        //     scenario!("block_transaction_count_by_number")
+        //         .register_transaction(transaction!(task_block_transaction_count_by_number)),
+        // )
+        // .register_scenario(
+        //     scenario!("transaction_by_hash")
+        //         .register_transaction(transaction!(task_transaction_by_hash)),
+        // )
+        // .register_scenario(
+        //     scenario!("transaction_by_block_number_and_index")
+        //         .register_transaction(transaction!(task_transaction_by_block_number_and_index)),
+        // )
+        // .register_scenario(
+        //     scenario!("transaction_by_block_hash_and_index")
+        //         .register_transaction(transaction!(task_transaction_by_block_hash_and_index)),
+        // )
+        // .register_scenario(
+        //     scenario!("transaction_receipt_by_hash")
+        //         .register_transaction(transaction!(task_transaction_receipt_by_hash)),
+        // )
+        // .register_scenario(
+        //     scenario!("block_number").register_transaction(transaction!(task_block_number)),
+        // )
+        // .register_scenario(
+        //     scenario!("get_events").register_transaction(transaction!(task_get_events)),
+        // )
         .register_scenario(
-            scenario!("block_by_number").register_transaction(transaction!(task_block_by_number)),
-        )
-        .register_scenario(
-            scenario!("block_by_hash").register_transaction(transaction!(task_block_by_hash)),
-        )
-        .register_scenario(
-            scenario!("block_transaction_count_by_hash")
-                .register_transaction(transaction!(task_block_transaction_count_by_hash)),
-        )
-        .register_scenario(
-            scenario!("block_transaction_count_by_number")
-                .register_transaction(transaction!(task_block_transaction_count_by_number)),
-        )
-        .register_scenario(
-            scenario!("transaction_by_hash")
-                .register_transaction(transaction!(task_transaction_by_hash)),
-        )
-        .register_scenario(
-            scenario!("transaction_by_block_number_and_index")
-                .register_transaction(transaction!(task_transaction_by_block_number_and_index)),
-        )
-        .register_scenario(
-            scenario!("transaction_by_block_hash_and_index")
-                .register_transaction(transaction!(task_transaction_by_block_hash_and_index)),
-        )
-        .register_scenario(
-            scenario!("transaction_receipt_by_hash")
-                .register_transaction(transaction!(task_transaction_receipt_by_hash)),
-        )
-        .register_scenario(
-            scenario!("block_number").register_transaction(transaction!(task_block_number)),
-        )
-        .register_scenario(
-            scenario!("get_events").register_transaction(transaction!(task_get_events)),
+            scenario!("get_storage_at").register_transaction(transaction!(task_get_storage_at)),
         )
         // primitive operations that don't use the database
-        .register_scenario(scenario!("syncing").register_transaction(transaction!(task_syncing)))
+        // .register_scenario(scenario!("syncing").register_transaction(transaction!(task_syncing)))
         .register_scenario(scenario!("chain_id").register_transaction(transaction!(task_chain_id)))
         // primitive operation utilizing the Cairo Python subprocesses
-        .register_scenario(scenario!("call").register_transaction(transaction!(task_call)))
+        // .register_scenario(scenario!("call").register_transaction(transaction!(task_call)))
         // composite scenario
-        .register_scenario(
-            scenario!("block_explorer").register_transaction(transaction!(block_explorer)),
-        )
+        // .register_scenario(
+        //     scenario!("block_explorer").register_transaction(transaction!(block_explorer)),
+        // )
         .execute()
         .await?;
 
