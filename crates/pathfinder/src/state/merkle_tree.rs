@@ -559,8 +559,7 @@ impl<T: NodeStorage> MerkleTree<T> {
     }
 
     /// Traverse this tree using an iterative Depth First Search.
-    #[allow(dead_code)]
-    pub fn dfs<VisitorFn>(&self, visitor_fn: &mut VisitorFn)
+    pub(crate) fn dfs<VisitorFn>(&self, visitor_fn: &mut VisitorFn)
     where
         VisitorFn: FnMut(&Node),
     {

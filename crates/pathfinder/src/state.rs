@@ -11,7 +11,7 @@ use crate::{
 
 pub mod block_hash;
 pub(crate) mod class_hash;
-mod merkle_node;
+pub(crate) mod merkle_node;
 pub(crate) mod merkle_tree;
 pub(crate) mod state_tree;
 mod sync;
