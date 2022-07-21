@@ -93,7 +93,7 @@ pub struct CallSignatureElem(pub StarkHash);
 pub struct ByteCodeWord(pub StarkHash);
 
 /// The address of a storage element for a StarkNet contract.
-#[derive(Copy, Clone, PartialEq, Eq, Deserialize, Serialize, PartialOrd, Ord)]
+#[derive(Copy, Clone, PartialEq, Eq, Deserialize, Serialize, PartialOrd, Ord, Hash)]
 pub struct StorageAddress(pub StarkHash);
 
 /// The value of a storage element for a StarkNet contract.
