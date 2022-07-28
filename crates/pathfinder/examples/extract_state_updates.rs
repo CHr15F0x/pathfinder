@@ -58,11 +58,9 @@ fn main() {
     };
 
     let path = std::path::PathBuf::from(path);
-    let storage = pathfinder_lib::storage::Storage::migrate(
-        path.clone(),
-        pathfinder_lib::storage::JournalMode::WAL,
-    )
-    .unwrap();
+    let storage =
+        pathfinder_lib::storage::Storage::migrate(path, pathfinder_lib::storage::JournalMode::WAL)
+            .unwrap();
 
     let mut connection = storage.connection().unwrap();
     let transaction = connection.transaction().unwrap();
@@ -265,10 +263,10 @@ pub fn extract_state_updates<F>(
 
         global_tree.dfs(&mut global_visitor);
 
+        // FIXME old_root, deployed, declared
         let mut state_update = StateUpdate {
             block_hash: Some(block.hash),
             new_root: block.root,
-            // FIXME old_root
             old_root: GlobalRoot(StarkHash::ZERO),
             state_diff: StateDiff {
                 storage_diffs: HashMap::new(),
