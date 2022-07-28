@@ -373,7 +373,7 @@ pub mod transaction {
 
 /// Used to deserialize a reply from
 /// [ClientApi::state_update](crate::sequencer::ClientApi::state_update).
-#[derive(Clone, Debug, Deserialize, PartialEq)]
+#[derive(Clone, Debug, Deserialize, serde::Serialize, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub struct StateUpdate {
     /// This field is absent for a `pending` state update
@@ -392,7 +392,7 @@ pub mod state_update {
 
     /// L2 state diff.
     #[serde_as]
-    #[derive(Clone, Debug, Deserialize, PartialEq)]
+    #[derive(Clone, Debug, Deserialize, serde::Serialize, PartialEq)]
     #[serde(deny_unknown_fields)]
     pub struct StateDiff {
         #[serde_as(as = "HashMap<_, Vec<_>>")]
@@ -410,7 +410,7 @@ pub mod state_update {
     }
 
     /// L2 storage diff.
-    #[derive(Clone, Debug, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
+    #[derive(Clone, Debug, Deserialize, serde::Serialize, PartialEq, Eq, PartialOrd, Ord)]
     #[serde(deny_unknown_fields)]
     pub struct StorageDiff {
         pub key: StorageAddress,
@@ -418,7 +418,7 @@ pub mod state_update {
     }
 
     /// L2 contract data within state diff.
-    #[derive(Clone, Debug, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
+    #[derive(Clone, Debug, Deserialize, serde::Serialize, PartialEq, Eq, PartialOrd, Ord)]
     #[serde(deny_unknown_fields)]
     pub struct Contract {
         pub address: ContractAddress,
