@@ -36,7 +36,8 @@ pub(crate) fn migrate(transaction: &Transaction<'_>) -> anyhow::Result<()> {
 
 pub fn test_state_update_extraction(
     transaction: &Transaction<'_>,
-    num_blocks: u64,
+    start_block: u64,
+    end_block: u64,
 ) -> Vec<StateUpdate> {
     let mut state_updates = vec![];
 
@@ -58,8 +59,8 @@ pub fn test_state_update_extraction(
     //         yield block_state_diff
     //         merge block_state_diff into global_KV_cache
     // ```
-    for block_number in 0..num_blocks {
-        tracing::info!("Processing block {block_number}/{num_blocks}");
+    for block_number in start_block..=end_block {
+        tracing::info!("Processing block {block_number}/{end_block}");
 
         // Contains all storage K-Vs for the current block that **differ** in any way from the `global_storage`
         // which is 1 block behind.

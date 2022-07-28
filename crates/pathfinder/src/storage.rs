@@ -5,7 +5,7 @@
 mod contract;
 mod ethereum;
 pub(crate) mod merkle_tree;
-mod schema;
+pub mod schema;
 mod state;
 
 use std::path::{Path, PathBuf};

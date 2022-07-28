@@ -2,11 +2,13 @@
 
 use anyhow::Context;
 use pathfinder_lib::{
-    cairo, config, core,
+    cairo, config,
+    core::{self, StorageValue},
     ethereum::transport::{EthereumTransport, HttpTransport},
     rpc, sequencer, state,
     storage::{JournalMode, Storage},
 };
+use stark_hash::StarkHash;
 use std::sync::Arc;
 use tracing::info;
 
@@ -66,6 +68,137 @@ Hint: Make sure the provided ethereum.url and ethereum.password are good.",
         None => sequencer::Client::new(ethereum_chain).unwrap(),
     };
     let sync_state = Arc::new(state::SyncState::default());
+
+    if true {
+        use crate::core::{ContractAddress, GlobalRoot};
+        use crate::sequencer::reply::{
+            state_update::{Contract, StorageDiff},
+            StateUpdate,
+        };
+        use std::collections::{BTreeMap, BTreeSet};
+
+        #[derive(Clone, Debug, PartialEq)]
+        pub struct OrderedStateDiff {
+            pub storage_diffs: BTreeMap<ContractAddress, BTreeSet<StorageDiff>>,
+            pub deployed_contracts: BTreeSet<Contract>,
+        }
+
+        #[derive(Clone, Debug, PartialEq)]
+        pub struct OrderedStateUpdate {
+            pub new_root: GlobalRoot,
+            pub old_root: GlobalRoot,
+            pub state_diff: OrderedStateDiff,
+        }
+
+        impl From<StateUpdate> for OrderedStateUpdate {
+            fn from(s: StateUpdate) -> Self {
+                Self {
+                    new_root: s.new_root,
+                    old_root: s.old_root,
+                    state_diff: OrderedStateDiff {
+                        storage_diffs: s
+                            .state_diff
+                            .storage_diffs
+                            .into_iter()
+                            .map(|(addr, diffs)| (addr, diffs.into_iter().collect()))
+                            .collect(),
+                        deployed_contracts: s.state_diff.deployed_contracts.into_iter().collect(),
+                    },
+                }
+            }
+        }
+
+        use pathfinder_lib::core::{BlockId, StarknetBlockNumber};
+        use pathfinder_lib::sequencer::ClientApi;
+        use pathfinder_lib::storage::schema::revision_0015::test_state_update_extraction;
+
+        tracing::info!("Extracting local state updates");
+
+        const START_BLOCK: u64 = 9900;
+        const END_BLOCK: u64 = 10000;
+
+        let mut conn = storage.connection().unwrap();
+        let transaction = conn.transaction().unwrap();
+        let local_ordered_state_updates =
+            test_state_update_extraction(&transaction, START_BLOCK, END_BLOCK)
+                .into_iter()
+                .map(|x| OrderedStateUpdate::from(x))
+                .collect::<Vec<_>>();
+        let sequencer = sequencer.clone();
+
+        let mut remote_state_updates = vec![];
+
+        tracing::info!("Fetching remote state updates");
+
+        for block_number in START_BLOCK..=END_BLOCK {
+            tracing::info!("Fetching {block_number}/{END_BLOCK}");
+            let mut su = sequencer
+                .state_update(BlockId::Number(StarknetBlockNumber(block_number)))
+                .await
+                .unwrap();
+
+            // FIXME (not supported yet)
+            su.old_root = GlobalRoot(StarkHash::ZERO);
+            su.state_diff.declared_contracts = vec![];
+            su.state_diff.deployed_contracts = vec![];
+
+            remote_state_updates.push(su);
+        }
+
+        let remote_ordered_state_updates = remote_state_updates
+            .into_iter()
+            .map(|x| {
+                let mut y = OrderedStateUpdate::from(x);
+                // WE ARE NOT STORING LEAVES THAT CONTAIN A ZERO VALUE SO CORRECT HERE
+                y.state_diff
+                    .storage_diffs
+                    .retain(|_contract_address, contract_storage_diffs| {
+                        contract_storage_diffs.retain(|storage_diff| {
+                            // Keep only those storage diffs that carry a nonzero value
+                            storage_diff.value != StorageValue(StarkHash::ZERO)
+                        });
+                        // Keep contract storage diffs which only contained nonzero values
+                        !contract_storage_diffs.is_empty()
+                    });
+                y
+            })
+            .collect::<Vec<_>>();
+
+        // tracing::error!("LOCAL:\n{:#?}", local_ordered_state_updates[5]);
+        // tracing::error!("REMOTE:\n{:#?}", remote_ordered_state_updates[5]);
+
+        // pretty_assertions::assert_eq!(
+        //     local_ordered_state_updates[16],
+        //     remote_ordered_state_updates[16],
+        // );
+
+        let failed_blocks = local_ordered_state_updates
+            .into_iter()
+            .zip(remote_ordered_state_updates.into_iter())
+            .enumerate()
+            .filter_map(|(i, (local, remote))| {
+                // assert_eq!(local, remote);
+                // pretty_assertions::assert_eq!(local, remote, "BLOCK: {i}");
+
+                if local == remote {
+                    None
+                } else {
+                    Some(i as u64 + START_BLOCK)
+                }
+            })
+            .collect::<Vec<_>>();
+
+        if failed_blocks.is_empty() {
+            tracing::info!("ALL MATCH!");
+        } else {
+            tracing::error!(
+                "FAILED BLOCKS {}/({START_BLOCK}..={END_BLOCK}): {failed_blocks:?}",
+                failed_blocks.len()
+            );
+        }
+
+        return Ok(());
+    }
 
     let sync_handle = tokio::spawn(state::sync(
         storage.clone(),
